@@ -1,0 +1,62 @@
+function exportSheetToCSV_Menu() {
+  // Replace with your Google Sheet ID
+  var sheetId = 'YOUR_GOOGLESHEET_FILE_ID_HERE';
+  
+  // Replace with the names of the sheets/tabs you want to export (one for each sheet)
+  var sheetNames = [
+    'YOUR_SHEET_ID_HERE' // For Sheet1
+    ];
+  
+  // Replace with the IDs of the existing CSV files in Google Drive (one for each sheet)
+  var csvFileIds = [
+    'YOUR_GOOGLEDRIVE_CSV_ID_HERE' // Csv File For Sheet1
+  ];
+  
+  // Open the spreadsheet
+  var spreadsheet = SpreadsheetApp.openById(sheetId);
+  
+  // Loop through each sheet name
+  for (var i = 0; i < sheetNames.length; i++) {
+    var sheetName = sheetNames[i];
+    var csvFileId = csvFileIds[i];
+    
+    // Get the sheet values
+    var sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet) {
+      Logger.log('Sheet not found: ' + sheetName);
+      continue; // Skip if the sheet doesn't exist
+    }
+    var data = sheet.getDataRange().getValues();
+    
+    // Convert the sheet values to CSV format
+    var csvContent = '';
+    for (var row = 0; row < data.length; row++) {
+      for (var col = 0; col < data[row].length; col++) {
+        var cell = data[row][col];
+        if (typeof cell === 'string' && cell.includes(',')) {
+          cell = `"${cell}"`; // Escape commas in strings
+        }
+        csvContent += cell + (col < data[row].length - 1 ? ',' : '');
+      }
+      csvContent += '\n';
+    }
+    
+    // Add UTF-8 BOM to the CSV content
+    var utf8BOM = '\uFEFF'; // UTF-8 BOM character
+    var csvContentWithBOM = utf8BOM + csvContent;
+    
+    // Get the existing CSV file in Google Drive
+    var file = DriveApp.getFileById(csvFileId);
+    
+    // Overwrite the file with the new CSV content (including UTF-8 BOM)
+    file.setContent(csvContentWithBOM);
+    Logger.log('Exported and overwritten: ' + sheetName);
+  }
+}
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Run AutoDownload')
+    .addItem('Export Sheets to CSV', 'exportSheetsToCSV') // Matches the function name
+    .addToUi();
+}
